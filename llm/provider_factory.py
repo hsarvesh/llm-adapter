@@ -76,3 +76,39 @@ def get_all_providers() -> Dict[str, BaseLLMProvider]:
     """Return all registered provider instances."""
     _init_providers()
     return _providers.copy()
+
+
+def create_ad_hoc_provider(name: str, config: Dict) -> BaseLLMProvider:
+    """Create a temporary provider instance with custom configuration."""
+    name = name.lower().strip()
+    
+    if name == "openai":
+        return OpenAIClient(api_key=config.get("api_key"))
+        
+    elif name == "azure":
+        return AzureOpenAIClient(
+            api_key=config.get("api_key"),
+            endpoint=config.get("endpoint")
+        )
+        
+    elif name == "gemini":
+        from llm.gemini_client import GeminiClient
+        import google.generativeai as genai
+        # Gemini uses global config, so we configure it here
+        if config.get("api_key"):
+            genai.configure(api_key=config.get("api_key"))
+        return GeminiClient()
+        
+    elif name == "anthropic":
+        from llm.anthropic_client import AnthropicClient
+        from anthropic import AsyncAnthropic
+        client = AnthropicClient()
+        if config.get("api_key"):
+            client._client = AsyncAnthropic(api_key=config.get("api_key"))
+        return client
+        
+    elif name == "ollama":
+        return OllamaClient(base_url=config.get("base_url"))
+        
+    else:
+        raise ValueError(f"Ad-hoc creation not supported for provider: {name}")

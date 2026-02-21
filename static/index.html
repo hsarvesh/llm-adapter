@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Adapter - Configuration Tester</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --error: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 40%);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 30px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        select, input, textarea {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        .status-online { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .status-offline { background: rgba(239, 68, 68, 0.1); color: var(--error); }
+
+        .result-container {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .result-box {
+            background: #020617;
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            border: 1px solid var(--border);
+        }
+
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden { display: none; }
+
+        @media (max-width: 900px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>LLM Adapter</h1>
+            <p class="subtitle">Configuration & Testing Playground</p>
+        </header>
+
+        <div class="main-grid">
+            <!-- Left: Config -->
+            <div class="card">
+                <h2>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    Credentials
+                </h2>
+                
+                <div class="form-group">
+                    <label>LLM Provider</label>
+                    <select id="provider">
+                        <option value="openai">OpenAI</option>
+                        <option value="gemini">Google Gemini</option>
+                        <option value="anthropic">Anthropic</option>
+                        <option value="azure">Azure OpenAI</option>
+                        <option value="ollama">Ollama (Local)</option>
+                    </select>
+                </div>
+
+                <div id="standard-fields">
+                    <div class="form-group">
+                        <label id="key-label">API Key</label>
+                        <input type="password" id="api-key" placeholder="Enter your API key">
+                    </div>
+                    <div class="form-group">
+                        <label>Model</label>
+                        <input type="text" id="model" placeholder="e.g. gpt-4o-mini">
+                    </div>
+                </div>
+
+                <div id="azure-fields" class="hidden">
+                    <div class="form-group">
+                        <label>Endpoint URL</label>
+                        <input type="text" id="azure-endpoint" placeholder="https://resource.openai.azure.com/">
+                    </div>
+                    <div class="form-group">
+                        <label>Deployment Name</label>
+                        <input type="text" id="azure-deployment" placeholder="my-deployment">
+                    </div>
+                </div>
+
+                <div id="ollama-fields" class="hidden">
+                    <div class="form-group">
+                        <label>Base URL</label>
+                        <input type="text" id="ollama-url" value="http://localhost:11434/v1">
+                    </div>
+                </div>
+
+                <button class="btn" id="save-config">
+                    <span>Test Configuration</span>
+                    <div class="loader" id="config-loader"></div>
+                </button>
+            </div>
+
+            <!-- Right: Test -->
+            <div class="card">
+                <h2>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"></path><path d="M7 20V4"></path><path d="m21 8-4-4-4 4"></path><path d="M17 4v16"></path></svg>
+                    Process File
+                </h2>
+
+                <div class="form-group">
+                    <label>Upload File</label>
+                    <input type="file" id="file-input">
+                </div>
+
+                <div class="form-group">
+                    <label>Prompt / Instructions</label>
+                    <textarea id="prompt" rows="4" placeholder="e.g. Summarize this content or extract key values..."></textarea>
+                </div>
+
+                <button class="btn" id="run-test">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Run Test
+                    <div class="loader" id="test-loader"></div>
+                </button>
+
+                <div class="result-container" id="result-container">
+                    <div class="result-header">
+                        <label>Output</label>
+                        <span id="time-badge" class="status-badge status-online">0ms</span>
+                    </div>
+                    <div class="result-box" id="result-box"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const providerSelect = document.getElementById('provider');
+        const azureFields = document.getElementById('azure-fields');
+        const ollamaFields = document.getElementById('ollama-fields');
+        const runBtn = document.getElementById('run-test');
+        const resultContainer = document.getElementById('result-container');
+        const resultBox = document.getElementById('result-box');
+        const testLoader = document.getElementById('test-loader');
+        const timeBadge = document.getElementById('time-badge');
+
+        providerSelect.addEventListener('change', () => {
+            const val = providerSelect.value;
+            azureFields.classList.toggle('hidden', val !== 'azure');
+            ollamaFields.classList.toggle('hidden', val !== 'ollama');
+            
+            // Update placeholders/defaults
+            if (val === 'openai') document.getElementById('model').value = 'gpt-4o-mini';
+            if (val === 'gemini') document.getElementById('model').value = 'gemini-1.5-flash';
+            if (val === 'anthropic') document.getElementById('model').value = 'claude-3-5-sonnet-20240620';
+        });
+
+        runBtn.addEventListener('click', async () => {
+            const file = document.getElementById('file-input').files[0];
+            const prompt = document.getElementById('prompt').value;
+            const provider = providerSelect.value;
+            
+            if (!file) {
+                alert('Please select a file first');
+                return;
+            }
+
+            runBtn.disabled = true;
+            testLoader.style.display = 'block';
+            resultContainer.style.display = 'block';
+            resultBox.textContent = 'Processing...';
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('prompt', prompt);
+            formData.append('provider', provider);
+            
+            // Add custom config headers for testing
+            const headers = {
+                'X-Test-Provider': provider,
+                'X-Test-Key': document.getElementById('api-key').value,
+                'X-Test-Model': document.getElementById('model').value,
+                'X-Test-Endpoint': document.getElementById('azure-endpoint').value,
+                'X-Test-Deployment': document.getElementById('azure-deployment').value,
+                'X-Test-Ollama-URL': document.getElementById('ollama-url').value
+            };
+
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch('/api/test-process', {
+                    method: 'POST',
+                    body: formData,
+                    headers: headers
+                });
+
+                const data = await response.json();
+                const duration = Math.round(performance.now() - startTime);
+                timeBadge.textContent = `${duration}ms`;
+
+                if (response.ok) {
+                    resultBox.textContent = data.llm_response || JSON.stringify(data, null, 2);
+                    resultBox.style.color = 'var(--text)';
+                } else {
+                    resultBox.textContent = `Error: ${data.detail || data.error || 'Unknown error'}`;
+                    resultBox.style.color = 'var(--error)';
+                }
+            } catch (err) {
+                resultBox.textContent = `Fetch Error: ${err.message}`;
+                resultBox.style.color = 'var(--error)';
+            } finally {
+                runBtn.disabled = false;
+                testLoader.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

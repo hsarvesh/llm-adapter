@@ -13,8 +13,9 @@ logger = structlog.get_logger(__name__)
 class OpenAIClient(BaseLLMProvider):
     """OpenAI API client."""
 
-    def __init__(self):
+    def __init__(self, api_key: Optional[str] = None):
         self._client = None
+        self._api_key = api_key
 
     @property
     def provider_name(self) -> str:
@@ -30,7 +31,7 @@ class OpenAIClient(BaseLLMProvider):
     def _get_client(self) -> AsyncOpenAI:
         if self._client is None:
             self._client = AsyncOpenAI(
-                api_key=settings.openai_api_key,
+                api_key=self._api_key or settings.openai_api_key,
                 base_url=settings.openai_base_url,
             )
         return self._client
@@ -82,8 +83,10 @@ class OpenAIClient(BaseLLMProvider):
 class AzureOpenAIClient(BaseLLMProvider):
     """Azure OpenAI API client."""
 
-    def __init__(self):
+    def __init__(self, api_key: Optional[str] = None, endpoint: Optional[str] = None):
         self._client = None
+        self._api_key = api_key
+        self._endpoint = endpoint
 
     @property
     def provider_name(self) -> str:
@@ -100,8 +103,8 @@ class AzureOpenAIClient(BaseLLMProvider):
         if self._client is None:
             from openai import AsyncAzureOpenAI
             self._client = AsyncAzureOpenAI(
-                api_key=settings.azure_openai_key,
-                azure_endpoint=settings.azure_openai_endpoint,
+                api_key=self._api_key or settings.azure_openai_key,
+                azure_endpoint=self._endpoint or settings.azure_openai_endpoint,
                 api_version="2024-02-01",
             )
         return self._client
@@ -153,8 +156,9 @@ class AzureOpenAIClient(BaseLLMProvider):
 class OllamaClient(BaseLLMProvider):
     """Ollama local LLM client (OpenAI-compatible API)."""
 
-    def __init__(self):
+    def __init__(self, base_url: Optional[str] = None):
         self._client = None
+        self._base_url = base_url
 
     @property
     def provider_name(self) -> str:
@@ -171,7 +175,7 @@ class OllamaClient(BaseLLMProvider):
         if self._client is None:
             self._client = AsyncOpenAI(
                 api_key="ollama",  # Ollama doesn't need a real key
-                base_url=settings.ollama_base_url,
+                base_url=self._base_url or settings.ollama_base_url,
             )
         return self._client
 
@@ -222,8 +226,10 @@ class OllamaClient(BaseLLMProvider):
 class CustomLLMClient(BaseLLMProvider):
     """Custom OpenAI-compatible endpoint client."""
 
-    def __init__(self):
+    def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None):
         self._client = None
+        self._api_key = api_key
+        self._base_url = base_url
 
     @property
     def provider_name(self) -> str:
@@ -239,8 +245,8 @@ class CustomLLMClient(BaseLLMProvider):
     def _get_client(self) -> AsyncOpenAI:
         if self._client is None:
             self._client = AsyncOpenAI(
-                api_key=settings.custom_llm_api_key or "custom",
-                base_url=settings.custom_llm_url,
+                api_key=self._api_key or settings.custom_llm_api_key or "custom",
+                base_url=self._base_url or settings.custom_llm_url,
                 default_headers=settings.custom_headers,
             )
         return self._client

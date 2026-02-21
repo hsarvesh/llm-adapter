@@ -8,7 +8,7 @@ and sends it to any configured LLM provider for processing or conversion.
 import time
 from typing import Optional, List
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -22,7 +22,7 @@ from parsers.document_parser import DocumentParser
 from parsers.spreadsheet_parser import SpreadsheetParser
 from parsers.image_parser import ImageParser
 from parsers.fallback_parser import FallbackParser
-from llm.provider_factory import get_provider, get_all_providers
+from llm.provider_factory import get_provider, get_all_providers, create_ad_hoc_provider
 from models.schemas import (
     ProcessResponse,
     BatchProcessResponse,
@@ -66,6 +66,8 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+from fastapi.staticfiles import StaticFiles
+
 # CORS
 app.add_middleware(
     CORSMiddleware,
@@ -74,6 +76,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Static files for the test page
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Telemetry
 app.add_middleware(TelemetryMiddleware)
@@ -221,6 +226,67 @@ async def process_file(
     Unidentified file types are handled gracefully with best-effort extraction.
     """
     return await _process_single_file(file, prompt, provider, system_prompt)
+
+
+@app.post("/api/test-process", response_model=ProcessResponse, tags=["Testing"])
+async def test_process_file(
+    file: UploadFile = File(...),
+    prompt: Optional[str] = Form(None),
+    x_test_provider: str = Header(...),
+    x_test_key: Optional[str] = Header(None),
+    x_test_model: Optional[str] = Header(None),
+    x_test_endpoint: Optional[str] = Header(None),
+    x_test_deployment: Optional[str] = Header(None),
+    x_test_ollama_url: Optional[str] = Header(None),
+):
+    """Temporary test endpoint that uses ad-hoc configuration from headers."""
+    start_time = time.time()
+    file_bytes = await file.read()
+    filename = file.filename or "unknown"
+    
+    # Extract content
+    extracted_content = await _extract_content(file_bytes, filename)
+    
+    # Configuration for ad-hoc provider
+    config = {
+        "api_key": x_test_key,
+        "endpoint": x_test_endpoint,
+        "base_url": x_test_ollama_url if x_test_provider == "ollama" else None,
+    }
+    
+    try:
+        provider = create_ad_hoc_provider(x_test_provider, config)
+        
+        # Determine model
+        model = x_test_model
+        if x_test_provider == "azure" and x_test_deployment:
+            model = x_test_deployment
+            
+        user_prompt = _build_user_prompt(extracted_content, prompt, filename)
+        system_prompt = "You are a helpful assistant analyzing file content."
+        
+        llm_response = await provider.generate(
+            user_prompt=user_prompt,
+            system_prompt=system_prompt,
+            model=model
+        )
+        
+        processing_time = (time.time() - start_time) * 1000
+        return ProcessResponse(
+            success=True,
+            filename=filename,
+            file_type=get_file_extension(filename),
+            file_size_bytes=len(file_bytes),
+            extracted_content_preview=extracted_content[:500],
+            llm_response=llm_response.content,
+            provider=llm_response.provider,
+            model=llm_response.model,
+            processing_time_ms=round(processing_time, 2),
+            token_usage=llm_response.token_usage,
+        )
+    except Exception as e:
+        logger.error("test_endpoint_error", error=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.post("/process/batch", response_model=BatchProcessResponse, tags=["Processing"])
