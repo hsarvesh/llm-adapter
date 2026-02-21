@@ -8,12 +8,17 @@ logger = structlog.get_logger(__name__)
 
 # Supported extensions grouped by category
 SUPPORTED_FORMATS = {
-    "Documents": [".pdf", ".docx", ".pptx"],
-    "Spreadsheets": [".xlsx", ".xls"],
-    "Text": [".txt", ".md"],
-    "Web": [".html", ".htm"],
-    "Data": [".json", ".xml", ".csv"],
-    "Images": [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".tif", ".webp"],
+    "Documents": [".pdf", ".docx", ".pptx", ".vsdx", ".rtf"],
+    "Spreadsheets": [".xlsx", ".xls", ".parquet"],
+    "Text": [".txt", ".md", ".puml", ".plantuml", ".uml", ".xer", ".sql", ".srt", ".vtt"],
+    "Web": [".html", ".htm", ".mhtml", ".mht"],
+    "Data": [".json", ".xml", ".csv", ".drawio", ".dio", ".vcf", ".ics", ".yaml", ".yml", ".ini", ".cfg"],
+    "Security": [".pem", ".cer", ".crt", ".pfx", ".p7m", ".sig"],
+    "Database": [".db", ".sqlite"],
+    "Archive": [".zip", ".7z", ".rar", ".tar", ".gz"],
+    "Communication": [".eml", ".msg", ".pst"],
+    "Notes": [".one"],
+    "Project": [".mpp", ".mpt"],
 }
 
 # Supported conversion target formats

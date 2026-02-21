@@ -93,7 +93,9 @@ class FallbackParser(BaseParser):
             f"File size: {len(file_bytes)} bytes ({len(file_bytes) / 1024:.1f} KB)\n\n"
             f"This file type cannot be parsed into text. "
             f"Supported formats include: PDF, DOCX, PPTX, XLSX, CSV, TXT, MD, "
-            f"JSON, XML, HTML, and images (PNG, JPG, GIF, BMP, TIFF, WEBP)."
+            f"JSON, XML, HTML, Image formats, Visio (VSDX), Draw.io, "
+            f"XER, PlantUML, MS Project (MPP), RTF, EML, MSG, ICS, VCF, "
+            f"MHTML, OneNote, PST, SQLite, Parquet, and Archives (ZIP/7Z/RAR)."
         )
 
     def _detect_mime(self, file_bytes: bytes) -> str:

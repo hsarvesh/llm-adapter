@@ -18,7 +18,11 @@ class TextParser(BaseParser):
 
     @property
     def supported_extensions(self) -> list[str]:
-        return [".txt", ".md", ".csv", ".json", ".xml", ".html", ".htm"]
+        return [
+            ".txt", ".md", ".csv", ".json", ".xml", ".html", ".htm", 
+            ".puml", ".plantuml", ".uml", ".xer", ".sql", ".srt", ".vtt",
+            ".yaml", ".yml", ".ini", ".cfg", ".pem", ".cer", ".crt"
+        ]
 
     def parse(self, file_bytes: bytes, filename: str) -> str:
         ext = ("." + filename.rsplit(".", 1)[-1].lower()) if "." in filename else ""
@@ -26,26 +30,78 @@ class TextParser(BaseParser):
         try:
             text = file_bytes.decode("utf-8")
         except UnicodeDecodeError:
-            text = file_bytes.decode("utf-8", errors="replace")
+            try:
+                text = file_bytes.decode("latin-1")
+            except Exception:
+                text = file_bytes.decode("utf-8", errors="replace")
             logger.warning("unicode_decode_fallback", filename=filename)
 
         if ext == ".csv":
             return self._parse_csv(text, filename)
+        elif ext == ".xer":
+            return self._parse_csv(text, filename, delimiter="\t")
         elif ext == ".json":
             return self._parse_json(text, filename)
+        elif ext in (".yaml", ".yml"):
+            return self._parse_yaml(text, filename)
+        elif ext in (".ini", ".cfg"):
+            return self._parse_ini(text, filename)
         elif ext == ".xml":
             return self._parse_xml(text, filename)
         elif ext in (".html", ".htm"):
             return self._parse_html(text, filename)
+        elif ext in (".srt", ".vtt"):
+            return self._parse_subtitles(text, filename)
         else:
-            # .txt and .md are returned as-is
+            # .txt, .md, .sql, .puml, .pem etc are returned as-is
             logger.info("text_parsed", filename=filename, length=len(text))
             return text
 
-    def _parse_csv(self, text: str, filename: str) -> str:
-        """Convert CSV to a formatted table string."""
+    def _parse_yaml(self, text: str, filename: str) -> str:
+        """Parse YAML and format as clean text/JSON-like structure."""
         try:
-            reader = csv.reader(io.StringIO(text))
+            import yaml
+            data = yaml.safe_load(text)
+            return json.dumps(data, indent=2, ensure_ascii=False)
+        except Exception as e:
+            logger.error("yaml_parse_error", filename=filename, error=str(e))
+            return text
+
+    def _parse_ini(self, text: str, filename: str) -> str:
+        """Parse INI/CFG files."""
+        try:
+            import configparser
+            config = configparser.ConfigParser()
+            config.read_string(text)
+            result = []
+            for section in config.sections():
+                result.append(f"[{section}]")
+                for key, value in config.items(section):
+                    result.append(f"{key} = {value}")
+                result.append("")
+            return "\n".join(result)
+        except Exception as e:
+            logger.error("ini_parse_error", filename=filename, error=str(e))
+            return text
+
+    def _parse_subtitles(self, text: str, filename: str) -> str:
+        """Clean up subtitle files by removing timestamps and indexes."""
+        import re
+        # Remove SRT indexes and timestamps
+        # 1
+        # 00:00:01,000 --> 00:00:04,000
+        text = re.sub(r'^\d+\r?\n\d{2}:\d{2}:\d{2},\d{3} --> \d{2}:\d{2}:\d{2},\d{3}', '', text, flags=re.MULTILINE)
+        # Remove VTT headers and timestamps
+        text = re.sub(r'WEBVTT', '', text)
+        text = re.sub(r'\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}.*', '', text)
+        
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        return "\n".join(lines)
+
+    def _parse_csv(self, text: str, filename: str, delimiter: str = ",") -> str:
+        """Convert CSV/TSV to a formatted table string."""
+        try:
+            reader = csv.reader(io.StringIO(text), delimiter=delimiter)
             rows = list(reader)
             if not rows:
                 return "(Empty CSV file)"

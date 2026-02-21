@@ -21,6 +21,12 @@ from parsers.text_parser import TextParser
 from parsers.document_parser import DocumentParser
 from parsers.spreadsheet_parser import SpreadsheetParser
 from parsers.image_parser import ImageParser
+from parsers.diagram_parser import DiagramParser
+from parsers.project_parser import ProjectParser
+from parsers.communication_parser import CommunicationParser
+from parsers.note_parser import NoteParser
+from parsers.archive_parser import ArchiveParser
+from parsers.database_parser import DatabaseParser
 from parsers.fallback_parser import FallbackParser
 from llm.provider_factory import get_provider, get_all_providers, create_ad_hoc_provider
 from models.schemas import (
@@ -92,6 +98,12 @@ parser_registry.register(TextParser())
 parser_registry.register(DocumentParser())
 parser_registry.register(SpreadsheetParser())
 parser_registry.register(ImageParser())
+parser_registry.register(DiagramParser())
+parser_registry.register(ProjectParser())
+parser_registry.register(CommunicationParser())
+parser_registry.register(NoteParser())
+parser_registry.register(ArchiveParser())
+parser_registry.register(DatabaseParser())
 parser_registry.set_fallback(FallbackParser())
 
 

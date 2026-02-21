@@ -34,3 +34,13 @@ structlog
 # Utilities
 python-magic-bin
 cachetools
+extract-msg
+striprtf
+icalendar
+vobject
+pyyaml
+pandas
+pyarrow
+cryptography
+rarfile
+py7zr
