@@ -1,0 +1,35 @@
+# Core
+fastapi
+uvicorn[standard]
+python-multipart
+python-dotenv
+pydantic-settings
+
+# LLM Providers
+openai
+google-generativeai
+anthropic
+cohere
+mistralai
+huggingface_hub
+
+# Document Parsing
+PyMuPDF
+pdfplumber
+python-docx
+python-pptx
+openpyxl
+beautifulsoup4
+lxml
+
+# Image/OCR
+Pillow
+easyocr
+pytesseract
+
+# Telemetry
+structlog
+
+# Utilities
+python-magic-bin
+cachetools
