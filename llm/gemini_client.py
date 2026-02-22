@@ -30,6 +30,7 @@ class GeminiClient(BaseLLMProvider):
         self,
         user_prompt: str,
         system_prompt: Optional[str] = None,
+        images: Optional[list[bytes]] = None,
         model: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,
@@ -52,8 +53,17 @@ class GeminiClient(BaseLLMProvider):
             max_output_tokens=max_tokens,
         )
 
+        # Build content list (text + optional images)
+        content = [user_prompt]
+        if images:
+            for img_bytes in images:
+                content.append({
+                    "mime_type": "image/jpeg",
+                    "data": img_bytes
+                })
+
         response = gen_model.generate_content(
-            user_prompt,
+            content,
             generation_config=generation_config,
         )
 

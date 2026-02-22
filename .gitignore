@@ -1,5 +1,29 @@
-.venv
-__pycache__
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.venv/
+venv/
+ENV/
+
+# Secrets
 .env
 local.settings.json
-.python_packages
+
+# Azure/Function Specific
+.python_packages/
+deploy.zip
+obj/
+bin/
+
+# IDEs
+.vscode/
+.idea/
+.project
+.settings/
+.classpath
+
+# Logs
+*.log

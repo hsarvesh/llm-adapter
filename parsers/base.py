@@ -24,6 +24,13 @@ class BaseParser(ABC):
         """
         pass
 
+    def parse_rich(self, file_bytes: bytes, filename: str) -> tuple[str, Optional[list[bytes]]]:
+        """
+        Extract rich content (text and images) from file bytes.
+        By default, returns text from parse() and no images.
+        """
+        return self.parse(file_bytes, filename), None
+
     @property
     @abstractmethod
     def supported_extensions(self) -> list[str]:

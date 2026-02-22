@@ -111,13 +111,8 @@ parser_registry.set_fallback(FallbackParser())
 # Helper Functions
 # ──────────────────────────────────────────────
 
-async def _extract_content(file_bytes: bytes, filename: str) -> str:
-    """Extract text content from file, using cache when available."""
-    # Check cache first
-    cached = get_cached_content(file_bytes, filename)
-    if cached is not None:
-        return cached
-
+async def _extract_content(file_bytes: bytes, filename: str) -> tuple[str, Optional[list[bytes]]]:
+    """Extract rich content (text + images) from file, using cache for text."""
     # Parse the file
     parser = parser_registry.get_parser(filename)
     if parser is None:
@@ -126,11 +121,20 @@ async def _extract_content(file_bytes: bytes, filename: str) -> str:
             detail=f"No parser available for file: {filename}",
         )
 
-    content = parser.parse(file_bytes, filename)
+    # Check cache for text content only
+    cached_text = get_cached_content(file_bytes, filename)
+    if cached_text is not None:
+        # Re-run parse_rich to get images, but we'd rather not parse twice if possible.
+        # For now, let's just parse_rich as it's usually fast (except OCR).
+        # We only cache the text part.
+        pass
 
-    # Cache the result
-    set_cached_content(file_bytes, filename, content)
-    return content
+    text, images = parser.parse_rich(file_bytes, filename)
+
+    if cached_text is None:
+        set_cached_content(file_bytes, filename, text)
+    
+    return text, images
 
 
 async def _process_single_file(
@@ -153,7 +157,7 @@ async def _process_single_file(
         raise HTTPException(status_code=413, detail=size_error)
 
     # Extract content
-    extracted_content = await _extract_content(file_bytes, filename)
+    extracted_content, images = await _extract_content(file_bytes, filename)
 
     # Build prompt for LLM
     user_prompt = _build_user_prompt(extracted_content, prompt, filename)
@@ -172,6 +176,7 @@ async def _process_single_file(
         llm_response = await provider.generate(
             user_prompt=user_prompt,
             system_prompt=system_prompt,
+            images=images,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -257,7 +262,7 @@ async def test_process_file(
     filename = file.filename or "unknown"
     
     # Extract content
-    extracted_content = await _extract_content(file_bytes, filename)
+    extracted_content, images = await _extract_content(file_bytes, filename)
     
     # Configuration for ad-hoc provider
     config = {
@@ -280,6 +285,7 @@ async def test_process_file(
         llm_response = await provider.generate(
             user_prompt=user_prompt,
             system_prompt=system_prompt,
+            images=images,
             model=model
         )
         
@@ -364,7 +370,7 @@ async def convert_file(
         raise HTTPException(status_code=413, detail=size_error)
 
     # Extract content
-    extracted_content = await _extract_content(file_bytes, filename)
+    extracted_content, images = await _extract_content(file_bytes, filename)
     file_ext = get_file_extension(filename)
 
     # Build conversion prompt
@@ -394,6 +400,7 @@ async def convert_file(
         llm_response = await llm_provider.generate(
             user_prompt=user_prompt,
             system_prompt=system_prompt,
+            images=images,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

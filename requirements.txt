@@ -1,6 +1,6 @@
 # Core
 fastapi
-uvicorn[standard]
+uvicorn
 python-multipart
 python-dotenv
 pydantic-settings
@@ -23,24 +23,21 @@ openpyxl
 beautifulsoup4
 lxml
 
-# Image/OCR
+# Image/OCR (Lightweight)
 Pillow
-easyocr
 pytesseract
 
 # Telemetry
 structlog
 
 # Utilities
-python-magic-bin
+python-magic
 cachetools
 extract-msg
 striprtf
 icalendar
 vobject
 pyyaml
-pandas
-pyarrow
 cryptography
 rarfile
 py7zr

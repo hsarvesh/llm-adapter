@@ -1,6 +1,7 @@
 """Parser for image files using OCR: EasyOCR (primary), pytesseract (fallback)."""
 
 import io
+from typing import Optional
 import structlog
 
 from parsers.base import BaseParser
@@ -50,11 +51,16 @@ class ImageParser(BaseParser):
             logger.warning("no_ocr_engine", filename=filename)
             return (
                 f"[Image file detected: {filename}]\n"
-                f"No OCR engine is available. Install EasyOCR (pip install easyocr) "
-                f"or Tesseract (pip install pytesseract + install Tesseract binary) "
-                f"to enable text extraction from images.\n"
+                f"Local OCR is not available due to deployment size limits.\n"
+                f"Recommendation: Use a Vision-capable model (like GPT-4o or Claude 3.5 Sonnet) "
+                f"which can analyze the image visually without needing local OCR.\n"
                 f"File size: {len(file_bytes)} bytes"
             )
+
+    def parse_rich(self, file_bytes: bytes, filename: str) -> tuple[str, Optional[list[bytes]]]:
+        """Return image bytes for vision models, plus local OCR if available."""
+        text = self.parse(file_bytes, filename)
+        return text, [file_bytes]
 
     def _parse_easyocr(self, file_bytes: bytes, filename: str) -> str:
         """Extract text using EasyOCR (no external dependencies needed)."""

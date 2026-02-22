@@ -41,6 +41,7 @@ class BaseLLMProvider(ABC):
         self,
         user_prompt: str,
         system_prompt: Optional[str] = None,
+        images: Optional[list[bytes]] = None,
         model: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,

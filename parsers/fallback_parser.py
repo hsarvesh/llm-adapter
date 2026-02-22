@@ -1,5 +1,6 @@
 """Fallback parser for unidentified or unsupported file types."""
 
+from typing import Optional
 import structlog
 from parsers.base import BaseParser
 
@@ -14,6 +15,15 @@ class FallbackParser(BaseParser):
         # This parser doesn't register for specific extensions;
         # it's set as the fallback in the registry.
         return []
+
+    def parse_rich(self, file_bytes: bytes, filename: str) -> tuple[str, Optional[list[bytes]]]:
+        """Support vision even for unrecognized files if they look like images."""
+        text = self.parse(file_bytes, filename)
+        mime_type = self._detect_mime(file_bytes)
+        images = None
+        if mime_type.startswith("image/"):
+            images = [file_bytes]
+        return text, images
 
     def parse(self, file_bytes: bytes, filename: str) -> str:
         """

@@ -40,6 +40,7 @@ class OpenAIClient(BaseLLMProvider):
         self,
         user_prompt: str,
         system_prompt: Optional[str] = None,
+        images: Optional[list[bytes]] = None,
         model: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,
@@ -50,7 +51,21 @@ class OpenAIClient(BaseLLMProvider):
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
-        messages.append({"role": "user", "content": user_prompt})
+        
+        # Build user content (text + optional images)
+        if not images:
+            user_content = user_prompt
+        else:
+            import base64
+            user_content = [{"type": "text", "text": user_prompt}]
+            for img_bytes in images:
+                base64_img = base64.b64encode(img_bytes).decode("utf-8")
+                user_content.append({
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{base64_img}"}
+                })
+
+        messages.append({"role": "user", "content": user_content})
 
         response = await client.chat.completions.create(
             model=model,
@@ -113,6 +128,7 @@ class AzureOpenAIClient(BaseLLMProvider):
         self,
         user_prompt: str,
         system_prompt: Optional[str] = None,
+        images: Optional[list[bytes]] = None,
         model: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,
@@ -123,7 +139,21 @@ class AzureOpenAIClient(BaseLLMProvider):
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
-        messages.append({"role": "user", "content": user_prompt})
+        
+        # Build user content (text + optional images)
+        if not images:
+            user_content = user_prompt
+        else:
+            import base64
+            user_content = [{"type": "text", "text": user_prompt}]
+            for img_bytes in images:
+                base64_img = base64.b64encode(img_bytes).decode("utf-8")
+                user_content.append({
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{base64_img}"}
+                })
+
+        messages.append({"role": "user", "content": user_content})
 
         response = await client.chat.completions.create(
             model=model,
@@ -183,6 +213,7 @@ class OllamaClient(BaseLLMProvider):
         self,
         user_prompt: str,
         system_prompt: Optional[str] = None,
+        images: Optional[list[bytes]] = None,
         model: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,
@@ -194,6 +225,9 @@ class OllamaClient(BaseLLMProvider):
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": user_prompt})
+
+        # Note: Basic Ollama integration here doesn't support images yet in this implementation
+        # but signature must match BaseLLMProvider
 
         response = await client.chat.completions.create(
             model=model,
@@ -255,6 +289,7 @@ class CustomLLMClient(BaseLLMProvider):
         self,
         user_prompt: str,
         system_prompt: Optional[str] = None,
+        images: Optional[list[bytes]] = None,
         model: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,

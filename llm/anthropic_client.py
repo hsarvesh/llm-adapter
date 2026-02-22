@@ -36,6 +36,7 @@ class AnthropicClient(BaseLLMProvider):
         self,
         user_prompt: str,
         system_prompt: Optional[str] = None,
+        images: Optional[list[bytes]] = None,
         model: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,
@@ -45,11 +46,26 @@ class AnthropicClient(BaseLLMProvider):
         if not model.startswith("claude"):
             model = "claude-3-5-sonnet-20241022"
 
+        # Build content list (text + optional images)
+        content = [{"type": "text", "text": user_prompt}]
+        if images:
+            import base64
+            for img_bytes in images:
+                base64_img = base64.b64encode(img_bytes).decode("utf-8")
+                content.append({
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": base64_img,
+                    },
+                })
+
         kwargs = {
             "model": model,
             "max_tokens": max_tokens,
             "temperature": temperature,
-            "messages": [{"role": "user", "content": user_prompt}],
+            "messages": [{"role": "user", "content": content}],
         }
         if system_prompt:
             kwargs["system"] = system_prompt

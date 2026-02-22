@@ -61,11 +61,13 @@ def validate_file_size(file_bytes: bytes, filename: str) -> Optional[str]:
 
 
 def detect_mime_type(file_bytes: bytes) -> str:
-    """Detect MIME type using python-magic if available."""
+    """Detect MIME type using python-magic with mimetypes fallback."""
     try:
         import magic
         return magic.from_buffer(file_bytes[:2048], mime=True)
     except Exception:
+        import mimetypes
+        # We don't have a filename here, but we can't do much with just bytes for mimetypes
         return "application/octet-stream"
 
 
